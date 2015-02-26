@@ -1,0 +1,10 @@
+.land_of_blocks {
+	position: relative;
+}
+
+.block {
+	position: absolute;
+	border: 1px solid black;
+	width: 19px;
+	height: 19px;
+}
