@@ -7,4 +7,8 @@ function BlockModel(x, y, color) {
 	this.color = color;
 }
 
+BlockModel.prototype.collides = function(b) {
+	return b.x == this.x && b.y == this.y;
+};
+
 module.exports = BlockModel;

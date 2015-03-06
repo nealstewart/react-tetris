@@ -4,9 +4,9 @@ var PieceStore = require('./piece_store');
 var addons = require('react-addons')
 
 var Piece = React.createClass({
-	initialState: function() {
+	getInitialState: function() {
 		return {
-			blocks: PieceStore.blocks
+			blocks: PieceStore.piece.blocks
 		};
 	},
 
@@ -19,12 +19,12 @@ var Piece = React.createClass({
 
 	_update: function() {
 		this.setState({
-			blocks: PieceStore.blocks
+			blocks: PieceStore.piece.blocks
 		});
 	},
 
 	render: function() {
-		var blocks = PieceStore.blocks.map(function(b) {
+		var blocks = this.state.blocks.map(function(b) {
 			return <Block key={b.id} block={b} />
 		});
 

@@ -3,49 +3,112 @@ var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 
 var BlockModel = require('./block_model');
+var PieceModel = require('./piece_model');
 var LandOfBlocksStore = require('./land_of_blocks_store');
 
-function PieceStore() {
-	this.blocks = [
-		new BlockModel(0, 0, 'red'),
-		new BlockModel(0, 1, 'red'),
-		new BlockModel(1, 0, 'red'),
-		new BlockModel(2, 0, 'red')
-	];
-}
-util.inherits(PieceStore, EventEmitter);
-
-function moveDown(blocks) {
-	return _.map(blocks, function(block) {
-		return new BlockModel(block.x, block.y + 1, block.color);
-	});
-}
-
-function isPastBoundary(blocks) {
-	return _.any(blocks, function(b) {
-		return b.y >= LandOfBlocksStore.height;
-	});
-}
-
-PieceStore.prototype.tick = function() {
-	var downBlocks = moveDown(this.blocks);
-
-	if (this.canMoveDown(downBlocks)) {
-		this.blocks = downBlocks;
-		this.emit('change');
-
-	} else {
-		return;
-		this.mergeWithLand();
+var TETRIMINOS = {
+	I: function() {
+		return new PieceModel([
+			new BlockModel(0, 0, 'cyan'),
+			new BlockModel(1, 0, 'cyan'),
+			new BlockModel(2, 0, 'cyan'),
+			new BlockModel(3, 0, 'cyan')
+		]);
+	},
+	L: function(color) {
+		return new PieceModel([
+			new BlockModel(0, 0, 'orange'),
+			new BlockModel(0, 1, 'orange'),
+			new BlockModel(1, 0, 'orange'),
+			new BlockModel(2, 0, 'orange')
+		]);
+	},
+	J: function(color) {
+		return new PieceModel([
+			new BlockModel(0, 0, 'blue'),
+			new BlockModel(2, 1, 'blue'),
+			new BlockModel(1, 0, 'blue'),
+			new BlockModel(2, 0, 'blue')
+		]);
 	}
 };
 
-PieceStore.prototype.mergeWithLand = function() {
-	this.blocks = [];
-	LandOfBlocksStore.blocks = LandOfBlocksStore.concat(this.blocks);
+var ORIGIN = {
+	x: 5,
+	y: 0
 };
 
-PieceStore.prototype.canMoveDown = function(blocks) {
+function getPiece() {
+	var i = Math.floor(Math.random() * Object.keys(TETRIMINOS).length);
+	var piece = _.values(TETRIMINOS)[i]()
+	piece.add(ORIGIN);
+	return piece;
+}
+
+function PieceStore() {
+	this.piece = getPiece()
+}
+util.inherits(PieceStore, EventEmitter);
+
+function isPastBoundary(blocks) {
+	return _.any(blocks, function(b) {
+		return b.y > LandOfBlocksStore.height + 1 || b.x < 0 || b.x > LandOfBlocksStore.width;
+	});
+}
+
+PieceStore.prototype.commitIfPossible = function(piece) {
+	if (!this.canMove(piece.blocks)) {
+		return false;
+	}
+
+	this.piece = piece;
+	this.emit('change');
+
+	return true;
+}
+
+PieceStore.prototype.rotate = function() {
+	this.commitIfPossible(this.piece.rotate());
+};
+
+PieceStore.prototype.down = function() {
+	var downPiece = this.piece.moveDown();
+
+	if (this.commitIfPossible(downPiece)) {
+		return true; 
+
+	} else {
+		this.mergeWithLand();
+		this.emit('change');
+
+		return false;
+	}
+};
+PieceStore.prototype.tick = PieceStore.prototype.down;
+
+PieceStore.prototype.drop = function() {
+	while (this.down()) {
+	}
+};
+
+PieceStore.prototype.right = function() {
+	this.commitIfPossible(this.piece.moveRight());
+};
+
+PieceStore.prototype.left = function() {
+	this.commitIfPossible(this.piece.moveLeft());
+};
+
+PieceStore.prototype.rotate = function() {
+	this.commitIfPossible(this.piece.rotate());
+};
+
+PieceStore.prototype.mergeWithLand = function() {
+	LandOfBlocksStore.merge(this.piece.blocks);
+	this.piece = getPiece();
+};
+
+PieceStore.prototype.canMove = function(blocks) {
 	return !isPastBoundary(blocks) && !LandOfBlocksStore.collides(blocks);
 };
 
