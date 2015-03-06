@@ -15,19 +15,19 @@ PieceModel.prototype.add = function(point) {
 
 PieceModel.prototype.moveDown = function() {
 	return new PieceModel(_.map(this.blocks, function(block) {
-		return new BlockModel(block.x, block.y + 1, block.color);
+		return block.down();
 	}));
 };
 
 PieceModel.prototype.moveRight = function() {
 	return new PieceModel(_.map(this.blocks, function(block) {
-		return new BlockModel(block.x + 1, block.y, block.color);
+		return block.right();
 	}));
 };
 
 PieceModel.prototype.moveLeft = function() {
 	return new PieceModel(_.map(this.blocks, function(block) {
-		return new BlockModel(block.x - 1, block.y, block.color);
+		return block.left();
 	}));
 };
 
